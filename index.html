@@ -213,10 +213,19 @@
   }
 
   const COMMANDS = {
+    async hi() {
+      await typeLine("Hi! 👋 I'm the VTR terminal — not a static 404 page, an actual running one.", "ok");
+      await sleep(150);
+      COMMANDS.help();
+    },
+    hello() {
+      COMMANDS.hi();
+    },
     help() {
       printLine(
         [
           "Available commands:",
+          "  <span class='accent'>hi</span>           — say hello",
           "  <span class='accent'>about</span>       — who we are",
           "  <span class='accent'>projects</span>    — live public repos from this org (GitHub API)",
           "  <span class='accent'>skills</span>       — what we build",
@@ -464,7 +473,7 @@
     await sleep(150);
     await typeLine("Connected to visiontech.com.in", "muted", 6);
     await sleep(100);
-    printLine("Type <span class='accent'>help</span> to begin, <span class='accent'>projects</span> for live repos, or <span class='accent'>message</span> to actually reach us.");
+    printLine("Type <span class='accent'>hi</span> to begin.");
     printLine("");
     input.focus();
   }
