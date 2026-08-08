@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Vision Technologies &amp; Robotics — Terminal</title>
+<meta name="description" content="Vision Technologies &amp; Robotics — Applied Engineering & Technology Transformation Firm. Interactive terminal." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
+<style>
+  :root {
+    --bg: #05070d;
+    --panel: #0b1120;
+    --border: #1e293b;
+    --text: #d7e2f1;
+    --dim: #64748b;
+    --primary: #38bdf8;
+    --primary2: #6366f1;
+    --ok: #34d399;
+    --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+    overflow: hidden;
+  }
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(99,102,241,0.16), transparent 60%),
+      radial-gradient(1000px 500px at 110% 10%, rgba(56,189,248,0.14), transparent 60%),
+      var(--bg);
+  }
+  .bg-grid {
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(148,163,184,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148,163,184,0.06) 1px, transparent 1px);
+    background-size: 34px 34px;
+    pointer-events: none;
+    mask-image: radial-gradient(circle at 50% 30%, black 0%, transparent 75%);
+  }
+  .win {
+    position: relative;
+    width: min(920px, 96vw);
+    height: min(620px, 90vh);
+    background: linear-gradient(180deg, rgba(15,23,42,0.9), rgba(5,7,13,0.96));
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(56,189,248,0.06), 0 0 60px rgba(56,189,248,0.05);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    backdrop-filter: blur(6px);
+  }
+  .titlebar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    flex-shrink: 0;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
+  .dot.r { background: #ff5f56; }
+  .dot.y { background: #ffbd2e; }
+  .dot.g { background: #27c93f; }
+  .titlebar .name {
+    margin-left: 10px;
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.5px;
+  }
+  .titlebar .badge {
+    margin-left: auto;
+    font-size: 10px;
+    color: var(--ok);
+    border: 1px solid rgba(52,211,153,0.35);
+    background: rgba(52,211,153,0.08);
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 1px;
+  }
+  .screen {
+    flex: 1;
+    padding: 18px 20px 10px;
+    overflow-y: auto;
+    font-size: 13.5px;
+    line-height: 1.55;
+  }
+  .screen::-webkit-scrollbar { width: 8px; }
+  .screen::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 8px; }
+  .line { white-space: pre-wrap; word-break: break-word; }
+  .muted { color: var(--dim); }
+  .ok { color: var(--ok); }
+  .warn { color: var(--warn); }
+  .accent { color: var(--primary); }
+  .prompt-tag { color: var(--primary2); }
+  a { color: var(--primary); text-decoration: none; border-bottom: 1px dashed rgba(56,189,248,0.4); }
+  a:hover { color: #7dd3fc; }
+  .ascii { color: var(--primary); font-weight: 700; line-height: 1.15; font-size: 12px; }
+  .inputRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px 16px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .inputRow .tag { color: var(--primary2); flex-shrink: 0; font-size: 13.5px; }
+  .inputRow input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font: inherit;
+    font-size: 13.5px;
+    caret-color: var(--primary);
+  }
+  .cmd { color: #fff; }
+  .hint { color: var(--dim); font-size: 11px; }
+  @media (max-width: 640px) {
+    .win { height: 92vh; }
+    .ascii { font-size: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="win" id="win">
+  <div class="titlebar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="name">contact@visiontech.com.in: ~/engineering</span>
+    <span class="badge">● LIVE</span>
+  </div>
+  <div class="screen" id="screen" tabindex="-1"></div>
+  <div class="inputRow">
+    <span class="tag">vtr&gt;</span>
+    <input id="cmdInput" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="terminal input" />
+  </div>
+</div>
+
+<script>
+(function () {
+  const screen = document.getElementById("screen");
+  const input = document.getElementById("cmdInput");
+  const win = document.getElementById("win");
+
+  const ASCII = [
+    " __      __ _____ ____  ",
+    " \\ \\    / /|_   _|  _ \\ ",
+    "  \\ \\  / /   | | | |_) |",
+    "   \\ \\/ /    | | |  _ < ",
+    "    \\  /    _| |_| |_) |",
+    "     \\/    |_____|____/ ",
+  ].join("\n");
+
+  function el(tag, cls, html) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+
+  function printLine(html, cls) {
+    const line = el("div", "line" + (cls ? " " + cls : ""), html);
+    screen.appendChild(line);
+    screen.scrollTop = screen.scrollHeight;
+    return line;
+  }
+
+  function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+  async function typeLine(text, cls, speed) {
+    const line = el("div", "line" + (cls ? " " + cls : ""));
+    screen.appendChild(line);
+    speed = speed === undefined ? 8 : speed;
+    for (let i = 0; i < text.length; i++) {
+      line.textContent += text[i];
+      if (i % 2 === 0) screen.scrollTop = screen.scrollHeight;
+      if (speed) await sleep(speed);
+    }
+    screen.scrollTop = screen.scrollHeight;
+  }
+
+  function escapeHtml(s) {
+    return String(s || "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+    }[c]));
+  }
+
+  const COMMANDS = {
+    help() {
+      printLine(
+        [
+          "Available commands:",
+          "  <span class='accent'>about</span>       — who we are",
+          "  <span class='accent'>projects</span>    — live public repos from this org (GitHub API)",
+          "  <span class='accent'>skills</span>       — what we build",
+          "  <span class='accent'>contact</span>      — how to reach us",
+          "  <span class='accent'>visit</span>        — open the main site",
+          "  <span class='accent'>whoami</span>       — guess who",
+          "  <span class='accent'>banner</span>       — reprint the logo",
+          "  <span class='accent'>clear</span>        — clear the screen",
+        ].join("\n"),
+      );
+    },
+    async about() {
+      await typeLine(
+        "Vision Technologies & Robotics — an applied engineering & technology transformation firm.",
+        "",
+      );
+      await typeLine(
+        "We stabilize broken infrastructure, automate manual workflows, deploy and rescue Codecanyon scripts,",
+        "muted",
+      );
+      await typeLine(
+        "and build mobile apps + robotics/OT integrations. If it's technical and it's broken, we fix it.",
+        "muted",
+      );
+      printLine("Main site: <a href='https://visiontech.com.in' target='_blank' rel='noopener'>visiontech.com.in</a>");
+    },
+    skills() {
+      printLine(
+        [
+          "[01] Infrastructure & Reliability Engineering",
+          "[02] Intelligent Automation Systems (RPA / BPA)",
+          "[03] Codecanyon Deployment & Scaling",
+          "[04] Custom Mobile & Digital Platforms",
+          "[05] Robotics & Operational Technology",
+        ].join("\n"),
+        "accent",
+      );
+    },
+    contact() {
+      printLine(
+        [
+          "email    : <a href='mailto:contact@visiontech.com.in'>contact@visiontech.com.in</a>",
+          "phone    : <a href='tel:+918500569000'>+91 8500 569 000</a>",
+          "facebook : <a href='https://www.facebook.com/vtrindia' target='_blank' rel='noopener'>facebook.com/vtrindia</a>",
+          "web      : <a href='https://visiontech.com.in' target='_blank' rel='noopener'>visiontech.com.in</a>",
+        ].join("\n"),
+      );
+    },
+    visit() {
+      printLine("Opening <span class='accent'>visiontech.com.in</span> …");
+      window.open("https://visiontech.com.in", "_blank", "noopener");
+    },
+    site() {
+      COMMANDS.visit();
+    },
+    whoami() {
+      printLine("You're standing in front of a terminal that shouldn't work on a 404 page. And yet.", "ok");
+    },
+    sudo(args) {
+      if ((args || "").trim() === "make coffee") {
+        printLine("☕ brewing... [████████████████████] 100%\nCoffee is a hardware problem. We only do software (for now).", "warn");
+      } else {
+        printLine("Permission denied: this terminal runs on trust, not root.", "warn");
+      }
+    },
+    banner() {
+      printLine("<pre class='ascii'>" + ASCII + "</pre>");
+      printLine("Vision Technologies &amp; Robotics — applied engineering.", "muted");
+    },
+    clear() {
+      screen.innerHTML = "";
+    },
+    ls() {
+      COMMANDS.projects();
+    },
+    async projects() {
+      const loading = printLine("Fetching live public repositories…", "muted");
+      try {
+        const res = await fetch("https://api.github.com/orgs/visiontech-com-ai/repos?type=public&sort=updated&per_page=30");
+        if (!res.ok) throw new Error("GitHub API " + res.status);
+        const repos = (await res.json()).filter((r) => !r.fork);
+        loading.remove();
+        if (!repos.length) {
+          printLine("No public repositories found.", "muted");
+          return;
+        }
+        printLine("Live from github.com/visiontech-com-ai — " + repos.length + " public repo(s):", "ok");
+        repos.forEach((r) => {
+          const desc = r.description ? escapeHtml(r.description) : "<span class='muted'>(no description)</span>";
+          printLine(
+            "→ <a href='" + r.html_url + "' target='_blank' rel='noopener'>" + escapeHtml(r.name) + "</a>  ★" + r.stargazers_count + "\n   " + desc,
+          );
+        });
+      } catch (err) {
+        loading.remove();
+        printLine("Could not reach the GitHub API right now (rate limit or offline). Try again shortly, or visit <a href='https://github.com/visiontech-com-ai' target='_blank' rel='noopener'>github.com/visiontech-com-ai</a> directly.", "warn");
+      }
+    },
+  };
+
+  function runCommand(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) return;
+    printLine("<span class='prompt-tag'>vtr&gt;</span> <span class='cmd'>" + escapeHtml(trimmed) + "</span>");
+    const [cmd, ...rest] = trimmed.split(" ");
+    const key = cmd.toLowerCase();
+    if (COMMANDS[key]) {
+      COMMANDS[key](rest.join(" "));
+    } else {
+      printLine("command not found: " + escapeHtml(cmd) + " — type <span class='accent'>help</span>", "warn");
+    }
+  }
+
+  const history = [];
+  let historyIndex = -1;
+
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const val = input.value;
+      input.value = "";
+      history.push(val);
+      historyIndex = history.length;
+      runCommand(val);
+    } else if (e.key === "ArrowUp") {
+      if (historyIndex > 0) {
+        historyIndex--;
+        input.value = history[historyIndex] || "";
+        setTimeout(() => input.setSelectionRange(input.value.length, input.value.length), 0);
+      }
+      e.preventDefault();
+    } else if (e.key === "ArrowDown") {
+      if (historyIndex < history.length) {
+        historyIndex++;
+        input.value = history[historyIndex] || "";
+      }
+      e.preventDefault();
+    }
+  });
+
+  win.addEventListener("click", () => input.focus());
+
+  async function boot() {
+    printLine("<pre class='ascii'>" + ASCII + "</pre>");
+    await sleep(200);
+    await typeLine("VisionOS terminal v1.0 — initializing applied engineering systems…", "muted", 6);
+    await sleep(150);
+    await typeLine("[OK] Infrastructure & Reliability", "ok", 4);
+    await typeLine("[OK] Automation & Robotics", "ok", 4);
+    await typeLine("[OK] Mobile & Web Platforms", "ok", 4);
+    await sleep(150);
+    await typeLine("Connected to visiontech.com.in", "muted", 6);
+    await sleep(100);
+    printLine("Type <span class='accent'>help</span> to begin, or try <span class='accent'>projects</span> for live repos.");
+    printLine("");
+    input.focus();
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
