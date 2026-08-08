@@ -157,14 +157,18 @@
   const input = document.getElementById("cmdInput");
   const win = document.getElementById("win");
 
-  const ASCII = [
-    " __      __ _____ ____  ",
-    " \\ \\    / /|_   _|  _ \\ ",
-    "  \\ \\  / /   | | | |_) |",
-    "   \\ \\/ /    | | |  _ < ",
-    "    \\  /    _| |_| |_) |",
-    "     \\/    |_____|____/ ",
-  ].join("\n");
+  const LETTERS = {
+    V: ["\\      /", " \\    / ", "  \\  /  ", "   \\/   ", "        ", "        "],
+    T: ["########", "   ##   ", "   ##   ", "   ##   ", "   ##   ", "   ##   "],
+    R: ["######  ", "##    ##", "##    ##", "######  ", "##  ##  ", "##   ###"],
+  };
+  function buildAscii(word) {
+    const letters = word.split("").map((c) => LETTERS[c]);
+    const rows = [];
+    for (let r = 0; r < 6; r++) rows.push(letters.map((L) => L[r]).join("   "));
+    return rows.join("\n");
+  }
+  const ASCII = buildAscii("VTR");
 
   function el(tag, cls, html) {
     const e = document.createElement(tag);
@@ -209,6 +213,7 @@
           "  <span class='accent'>projects</span>    — live public repos from this org (GitHub API)",
           "  <span class='accent'>skills</span>       — what we build",
           "  <span class='accent'>contact</span>      — how to reach us",
+          "  <span class='accent'>message</span>      — actually send us a message, right now",
           "  <span class='accent'>visit</span>        — open the main site",
           "  <span class='accent'>whoami</span>       — guess who",
           "  <span class='accent'>banner</span>       — reprint the logo",
@@ -256,6 +261,12 @@
     visit() {
       printLine("Opening <span class='accent'>visiontech.com.in</span> …");
       window.open("https://visiontech.com.in", "_blank", "noopener");
+    },
+    message() {
+      startMessageFlow();
+    },
+    send() {
+      startMessageFlow();
     },
     site() {
       COMMANDS.visit();
@@ -305,6 +316,53 @@
     },
   };
 
+  let activeFlow = null;
+
+  function startMessageFlow() {
+    activeFlow = { step: "name", data: {} };
+    printLine("Let's send a real message to contact@visiontech.com.in — press Enter after each line ('cancel' to stop).", "accent");
+    printLine("Your name:");
+  }
+
+  function handleFlowInput(raw) {
+    const v = raw.trim();
+    if (v.toLowerCase() === "cancel") {
+      printLine("Message cancelled.", "warn");
+      activeFlow = null;
+      return;
+    }
+    if (activeFlow.step === "name") {
+      if (!v) { printLine("Name can't be empty. Your name:"); return; }
+      activeFlow.data.name = v;
+      activeFlow.step = "email";
+      printLine("Your email (so we can reply):");
+      return;
+    }
+    if (activeFlow.step === "email") {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) {
+        printLine("That doesn't look like a valid email. Your email:", "warn");
+        return;
+      }
+      activeFlow.data.email = v;
+      activeFlow.step = "message";
+      printLine("Your message:");
+      return;
+    }
+    if (activeFlow.step === "message") {
+      if (!v) { printLine("Message can't be empty. Your message:"); return; }
+      activeFlow.data.message = v;
+      const { name, email, message } = activeFlow.data;
+      const subject = encodeURIComponent("Message from " + name + " via visiontech-com-ai.github.io");
+      const body = encodeURIComponent(message + "\n\n— " + name + " (" + email + ")");
+      const mailtoUrl = "mailto:contact@visiontech.com.in?subject=" + subject + "&body=" + body;
+      printLine("Opening your email client to send this to <span class='accent'>contact@visiontech.com.in</span> …", "ok");
+      printLine("Nothing happen? <a href='" + mailtoUrl + "'>Click here to send it manually</a>.", "muted");
+      window.location.href = mailtoUrl;
+      activeFlow = null;
+      return;
+    }
+  }
+
   function runCommand(raw) {
     const trimmed = raw.trim();
     if (!trimmed) return;
@@ -327,7 +385,12 @@
       input.value = "";
       history.push(val);
       historyIndex = history.length;
-      runCommand(val);
+      if (activeFlow) {
+        printLine("<span class='prompt-tag'>vtr&gt;</span> <span class='cmd'>" + escapeHtml(val) + "</span>");
+        handleFlowInput(val);
+      } else {
+        runCommand(val);
+      }
     } else if (e.key === "ArrowUp") {
       if (historyIndex > 0) {
         historyIndex--;
@@ -357,7 +420,7 @@
     await sleep(150);
     await typeLine("Connected to visiontech.com.in", "muted", 6);
     await sleep(100);
-    printLine("Type <span class='accent'>help</span> to begin, or try <span class='accent'>projects</span> for live repos.");
+    printLine("Type <span class='accent'>help</span> to begin, <span class='accent'>projects</span> for live repos, or <span class='accent'>message</span> to actually reach us.");
     printLine("");
     input.focus();
   }
