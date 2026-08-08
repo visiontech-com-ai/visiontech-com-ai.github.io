@@ -130,6 +130,13 @@
   }
   .cmd { color: #fff; }
   .hint { color: var(--dim); font-size: 11px; }
+  .mapWrap {
+    margin: 8px 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .mapWrap iframe { display: block; width: 100%; height: 260px; border: 0; }
   @media (max-width: 640px) {
     .win { height: 92vh; }
     .ascii { font-size: 8px; }
@@ -169,6 +176,7 @@
     return rows.join("\n");
   }
   const ASCII = buildAscii("VTR");
+  const MAP_EMBED_URL = "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4360.323958230013!2d88.01198927587839!3d22.880804921602685!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f865c085c0ab4f%3A0xd50b2fb120d2a527!2sVision%20Technologies%20%26%20Robotics!5e1!3m2!1sen!2sin!4v1786174946543!5m2!1sen!2sin";
 
   function el(tag, cls, html) {
     const e = document.createElement(tag);
@@ -214,6 +222,7 @@
           "  <span class='accent'>skills</span>       — what we build",
           "  <span class='accent'>contact</span>      — how to reach us",
           "  <span class='accent'>message</span>      — actually send us a message, right now",
+          "  <span class='accent'>map</span>           — show our location",
           "  <span class='accent'>visit</span>        — open the main site",
           "  <span class='accent'>whoami</span>       — guess who",
           "  <span class='accent'>banner</span>       — reprint the logo",
@@ -257,6 +266,7 @@
           "web      : <a href='https://visiontech.com.in' target='_blank' rel='noopener'>visiontech.com.in</a>",
         ].join("\n"),
       );
+      printLine("Type <span class='accent'>message</span> to send us something directly, or <span class='accent'>map</span> to see where we are.", "muted");
     },
     visit() {
       printLine("Opening <span class='accent'>visiontech.com.in</span> …");
@@ -267,6 +277,19 @@
     },
     send() {
       startMessageFlow();
+    },
+    map() {
+      if (!MAP_EMBED_URL) {
+        printLine("Map isn't wired up yet — check back soon, or try <span class='accent'>contact</span>.", "warn");
+        return;
+      }
+      const wrap = el(
+        "div",
+        "mapWrap",
+        "<iframe src='" + MAP_EMBED_URL + "' loading='lazy' referrerpolicy='no-referrer-when-downgrade' allowfullscreen></iframe>",
+      );
+      screen.appendChild(wrap);
+      screen.scrollTop = screen.scrollHeight;
     },
     site() {
       COMMANDS.visit();
@@ -320,8 +343,34 @@
 
   function startMessageFlow() {
     activeFlow = { step: "name", data: {} };
-    printLine("Let's send a real message to contact@visiontech.com.in — press Enter after each line ('cancel' to stop).", "accent");
+    printLine("Let's send a real message — it lands directly in our inbox. Press Enter after each line ('cancel' to stop).", "accent");
     printLine("Your name:");
+  }
+
+  async function sendToBackend(name, email, message) {
+    printLine("Sending to visiontech.com.in …", "muted");
+    try {
+      const res = await fetch("https://visiontech.com.in/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          subject: "Message via terminal (visiontech-com-ai.github.io)",
+          message,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data.ok) throw new Error(data.error || "request failed");
+      printLine("Message received — it's in our inbox now. Thanks, " + escapeHtml(name) + "!", "ok");
+    } catch (err) {
+      const subject = encodeURIComponent("Message from " + name + " via visiontech-com-ai.github.io");
+      const body = encodeURIComponent(message + "\n\n— " + name + " (" + email + ")");
+      const mailtoUrl = "mailto:contact@visiontech.com.in?subject=" + subject + "&body=" + body;
+      printLine("Couldn't reach the server directly — opening your email client instead.", "warn");
+      printLine("Nothing happen? <a href='" + mailtoUrl + "'>Click here to send it manually</a>.", "muted");
+      window.location.href = mailtoUrl;
+    }
   }
 
   function handleFlowInput(raw) {
@@ -352,13 +401,8 @@
       if (!v) { printLine("Message can't be empty. Your message:"); return; }
       activeFlow.data.message = v;
       const { name, email, message } = activeFlow.data;
-      const subject = encodeURIComponent("Message from " + name + " via visiontech-com-ai.github.io");
-      const body = encodeURIComponent(message + "\n\n— " + name + " (" + email + ")");
-      const mailtoUrl = "mailto:contact@visiontech.com.in?subject=" + subject + "&body=" + body;
-      printLine("Opening your email client to send this to <span class='accent'>contact@visiontech.com.in</span> …", "ok");
-      printLine("Nothing happen? <a href='" + mailtoUrl + "'>Click here to send it manually</a>.", "muted");
-      window.location.href = mailtoUrl;
       activeFlow = null;
+      sendToBackend(name, email, message);
       return;
     }
   }
