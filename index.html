@@ -222,22 +222,26 @@
       COMMANDS.hi();
     },
     help() {
-      printLine(
-        [
-          "Available commands:",
-          "  <span class='accent'>hi</span>           — say hello",
-          "  <span class='accent'>about</span>       — who we are",
-          "  <span class='accent'>projects</span>    — live public repos from this org (GitHub API)",
-          "  <span class='accent'>skills</span>       — what we build",
-          "  <span class='accent'>contact</span>      — how to reach us",
-          "  <span class='accent'>message</span>      — actually send us a message, right now",
-          "  <span class='accent'>map</span>           — show our location",
-          "  <span class='accent'>visit</span>        — open the main site",
-          "  <span class='accent'>whoami</span>       — guess who",
-          "  <span class='accent'>banner</span>       — reprint the logo",
-          "  <span class='accent'>clear</span>        — clear the screen",
-        ].join("\n"),
-      );
+      const items = [
+        ["hi", "say hello"],
+        ["about", "who we are"],
+        ["projects", "live public repos from this org (GitHub API)"],
+        ["skills", "what we build"],
+        ["contact", "how to reach us"],
+        ["message", "actually send us a message, right now"],
+        ["map", "show our location"],
+        ["visit", "open the main site"],
+        ["whoami", "guess who"],
+        ["banner", "reprint the logo"],
+        ["clear", "clear the screen"],
+      ];
+      const maxLen = Math.max(...items.map(([name]) => name.length));
+      const lines = ["Available commands:"];
+      items.forEach(([name, desc]) => {
+        const pad = " ".repeat(maxLen - name.length + 2);
+        lines.push("  <span class='accent'>" + name + "</span>" + pad + "— " + desc);
+      });
+      printLine(lines.join("\n"));
     },
     async about() {
       await typeLine(
